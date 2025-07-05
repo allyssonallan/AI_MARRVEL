@@ -46,8 +46,7 @@ RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
     add-apt-repository universe && \
     apt-get update && \
     apt-get install -y r-base r-base-core && \
-    R -e "install.packages('pak')" \
-    R -e "pak::pkg_install(c('data.table','dplyr','ontologyIndex','ontologySimilarity','tidyverse'), dependencies=TRUE, repos='http://cran.rstudio.com/')" && \
+    R -e "install.packages('pak'); pak::pkg_install(c('data.table','dplyr','ontologyIndex','ontologySimilarity','tidyverse'), dependencies=TRUE, repos='http://cran.rstudio.com/')" && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install bcftools
