@@ -20,9 +20,9 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     liblzma-dev \
     tabix \
-    python3.10 \
-    python3.10-dev \
-    python3.10-distutils \
+    python3.8 \
+    python3.8-dev \
+    python3.8-distutils \
     python3-apt \
     python3-pip \
     python3-venv \
@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set python3.10 as default
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
 
 # Install Python dependencies
 COPY requirements.txt /opt/requirements.txt
@@ -46,7 +46,7 @@ RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
     add-apt-repository universe && \
     apt-get update && \
     apt-get install -y r-base r-base-core && \
-    R -r "install.packages('pak')" \
+    R -e "install.packages('pak')" \
     R -e "pak::pkg_install(c('data.table','dplyr','ontologyIndex','ontologySimilarity','tidyverse'), dependencies=TRUE, repos='http://cran.rstudio.com/')" && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
