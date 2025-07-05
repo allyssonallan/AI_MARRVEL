@@ -29,3 +29,16 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/aim-lite:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Test docker image
+        run: |
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/aim-lite:latest --version
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/aim-lite:latest --help
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/aim-lite:latest --test
+      
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          file: Dockerfile
