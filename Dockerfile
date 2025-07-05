@@ -5,8 +5,7 @@
 #	python 3.8.13
 #	R 4.2.1
 
-# dc7a542b7e1f
-#FROM ubuntu:18.04
+FROM ubuntu:22.04
 FROM ensemblorg/ensembl-vep:release_104.3
 USER root
 ENV DEBIAN_FRONTEND noninteractive
@@ -23,9 +22,10 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
     tabix \
     python2.7 \
-    python3.8 \
-    python3.8-dev \
-    python3.8-distutils \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    python3.10-slim \
     python3-apt \
     python3-pip \
     python3-venv
