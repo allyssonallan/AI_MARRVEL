@@ -29,9 +29,9 @@ RUN apt-get update && apt-get install -y \
     python3-apt
 
 # Install Python 3.10 and pip
-RUN apt-get update && \
-    apt-get install -y python3.10 python3.10-venv python3.10-distutils curl && \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+#RUN apt-get update && \
+#    apt-get install -y python3.10 python3.10-venv python3.10-distutils curl && \
+#    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
 
 # Install python 3.8 dependencies
 COPY requirements.txt /opt/requirements.txt
