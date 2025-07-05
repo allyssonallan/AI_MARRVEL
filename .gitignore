@@ -3,6 +3,8 @@
 bcftools-1.9.tar.bz2
 run/bedtools
 .vscode/
+.venv/
+ai_marrvel_env/
 .DS_Store
 */.DS_Store
 test_data/

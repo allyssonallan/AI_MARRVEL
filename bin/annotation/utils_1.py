@@ -3,10 +3,8 @@
 # from liftover import get_lifter
 import pandas as pd
 import numpy as np
-import pprint
 import json
 import requests
-
 
 # class for variant
 class Variant:

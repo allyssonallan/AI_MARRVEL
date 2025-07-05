@@ -66,8 +66,6 @@ RUN R -e "install.packages('ontologyIndex',dependencies=TRUE, repos='http://cran
 RUN R -e "install.packages('ontologySimilarity',dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('tidyverse',dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
-
-
 # Install bcftools
 RUN wget https://github.com/samtools/bcftools/releases/download/1.20/bcftools-1.20.tar.bz2
 RUN mv bcftools-1.20.tar.bz2 /opt/bcftools-1.20.tar.bz2

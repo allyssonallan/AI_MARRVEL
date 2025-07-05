@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
-import pandas as pd
+"""This module contains functions to curate variant data based on OMIM, HGMD, and ClinVar databases.
+It includes functions to load raw matrices, curate OMIM, HGMD, and ClinVar data, and to calculate conservation scores.
+"""
 import numpy as np
-
 
 def load_raw_matrix(score):
     raw_features = [
@@ -89,7 +90,6 @@ def load_raw_matrix(score):
 
     return score.loc[:, raw_features].copy()
 
-
 def omimCurate(vardf):
     """
     When related value changed,
@@ -129,7 +129,6 @@ def omimCurate(vardf):
     vardf.loc[medi_bool, "curationScoreOMIM"] = "Medium"
 
     return vardf
-
 
 def hgmdCurate(vardf):
     """
@@ -178,7 +177,6 @@ def hgmdCurate(vardf):
     vardf.loc[medi_bool, "curationScoreHGMD"] = "Medium"
 
     return vardf
-
 
 def clinvarCurate(vardf):
     """
@@ -283,7 +281,6 @@ def clinvarCurate(vardf):
 
     return vardf
 
-
 def conservationCurate(vardf):
     """
     When related value changed,
@@ -331,7 +328,6 @@ def conservationCurate(vardf):
     vardf.loc[high_bool, "conservationScoreOELof"] = "High"
 
     return vardf
-
 
 def getValFromStr(valStr: str, select: str = "min"):
     """
