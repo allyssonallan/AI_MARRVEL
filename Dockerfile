@@ -26,7 +26,9 @@ RUN apt-get update && apt-get install -y \
     python3.8 \
     python3.8-dev \
     python3.8-distutils \
-    python3-apt
+    python3-apt \
+    python3-pip \
+    python3-venv \
 
 # Install Python 3.10 and pip
 #RUN apt-get update && \
