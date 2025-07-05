@@ -17,6 +17,7 @@ A clear and concise description of what you expected to happen.
 Share the data if possible. If not, describe it as much as you can.
 
 **Genome build**
+Check the reference build
 
 **Screenshots or pipeline output**
 If applicable, add screenshots to help explain your problem.
