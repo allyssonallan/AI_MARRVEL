@@ -9,8 +9,7 @@ nextflow.enable.dsl = 2
  */
 
 // Parameter definitions
-// compute every derived variable once, in plain Groovy, using only ternaries
-params.input_vcf = null
+// compute every derived variable once, in plain Groovy, using only ternariesparams.input_vcf = null
 params.input_hpo = null
 params.ref_dir = null
 params.ref_ver = null

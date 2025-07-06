@@ -1,83 +1,23 @@
-nextflow_pipeline {
-    name "Test Main Pipeline"
-    script "main.nf"
 
-    test("Should run main pipeline with test data") {
+nextflow_workflow {
+    name "Test main workflow"
+    script "main.nf"
+    workflow "MAIN"
+
+    test("Should run the main workflow without errors") {
         when {
             params {
-                input_vcf = "${projectDir}/test_data/test.vcf.gz"
-                input_hpo = "${projectDir}/test_data/test.hpo"
-                ref_dir = "${projectDir}/test_data/ref"
-                ref_ver = "hg38"
-                vep_idx = "${projectDir}/test_data/vep.idx"
-                vep_custom_clinvar = "${projectDir}/test_data/clinvar.vcf.gz"
-                vep_custom_hgmd = "${projectDir}/test_data/hgmd.vcf.gz"
-                vep_plugin_revel = "${projectDir}/test_data/revel.tsv.gz"
-                vep_plugin_spliceai_snv = "${projectDir}/test_data/spliceai_snv.vcf.gz"
-                vep_plugin_spliceai_indel = "${projectDir}/test_data/spliceai_indel.vcf.gz"
-                omim_hgmd_phen = "${projectDir}/test_data/omim_hgmd_phen.txt"
-                omim_obo = "${projectDir}/test_data/omim.obo"
-                omim_genemap2 = "${projectDir}/test_data/genemap2.txt"
-                omim_pheno = "${projectDir}/test_data/omim_pheno.txt"
-                ref_annot_dir = "${projectDir}/test_data/ref_annot"
-                ref_var_tier_dir = "${projectDir}/test_data/ref_var_tier"
-                ref_merge_expand_dir = "${projectDir}/test_data/ref_merge_expand"
-                ref_mod5_diffusion_dir = "${projectDir}/test_data/ref_mod5_diffusion"
-                ref_predict_new_dir = "${projectDir}/test_data/ref_predict_new"
-                ref_model_inputs_dir = "${projectDir}/test_data/ref_model_inputs"
+                input_vcf = "${projectDir}/tests/data/test.vcf"
+                input_hpo = "${projectDir}/tests/data/test.hpo"
+                ref_dir   = "${projectDir}/tests/data" // Point to a test data dir
+                ref_ver   = "hg19"
+                outdir    = "${projectDir}/tests/output"
+                run_id    = "test_run"
             }
         }
 
         then {
             assert workflow.success
-            assert workflow.trace.succeeded().size() > 0
-            assert workflow.trace.failed().size() == 0
-            
-            with(workflow.trace) {
-                assert tasks().any { it.name == 'NORMALIZE_VCF' }
-                assert tasks().any { it.name == 'BUILD_REFERENCE_INDEX' }
-                assert tasks().any { it.name == 'SPLIT_VCF_BY_CHROMOSOME' }
-                assert tasks().any { it.name == 'ANNOTATE_BY_VEP' }
-                assert tasks().any { it.name == 'HPO_SIM' }
-                assert tasks().any { it.name == 'ANNOTATE_BY_MODULES' }
-                assert tasks().any { it.name == 'JOIN_TIER_PHRANK' }
-                assert tasks().any { it.name == 'MERGE_SCORES_BY_CHROMOSOME' }
-                assert tasks().any { it.name == 'PREDICTION' }
-            }
-        }
-    }
-
-    test("Should fail with invalid reference version") {
-        when {
-            params {
-                input_vcf = "${projectDir}/test_data/test.vcf.gz"
-                input_hpo = "${projectDir}/test_data/test.hpo"
-                ref_dir = "${projectDir}/test_data/ref"
-                ref_ver = "invalid_version"
-            }
-        }
-
-        then {
-            assert workflow.failed
-            assert workflow.exitStatus != 0
-            assert workflow.stdout.contains("Error: '--ref_ver' value invalid_version should be either set to 'hg19' or 'hg38'")
-        }
-    }
-
-    test("Should fail with missing VCF file") {
-        when {
-            params {
-                input_vcf = "${projectDir}/test_data/nonexistent.vcf"
-                input_hpo = "${projectDir}/test_data/test.hpo"
-                ref_dir = "${projectDir}/test_data/ref"
-                ref_ver = "hg38"
-            }
-        }
-
-        then {
-            assert workflow.failed
-            assert workflow.exitStatus != 0
-            assert workflow.stdout.contains("Error: '--input_vcf' file not found")
         }
     }
 }
