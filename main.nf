@@ -119,22 +119,86 @@ include { VCF_PRE_PROCESS } from './subworkflows/vcf_preprocess.nf'
 include { PHRANK_SCORING } from './subworkflows/phrank_scoring.nf'
 
 // Main workflow
-workflow {
-    // Move variable assignments here
-    def refAssembly   = params.ref_ver == 'hg19' ? 'grch37' : 'grch38'
-    def chrmapPath    = "${params.ref_dir}/bcf_annotate/chrmap.txt"
-    def refLoc        = "${params.ref_dir}/phrank/${params.ref_ver}/${refAssembly}_symbol_to_location.txt"
-    def refToSym      = "${params.ref_dir}/phrank/${params.ref_ver}/ensembl_to_symbol.txt"
-    def sortedSym     = "${params.ref_dir}/phrank/${params.ref_ver}/gene_to_symbol_sorted.txt"
-    def exonicBed     = "${params.ref_dir}/filter_exonic/${params.ref_ver}.bed"
-    def filterBed     = params.bed_filter ? params.bed_filter : (params.exome_filter ? exonicBed : '/dev/null'
+workflow MAIN {
+    // Reference assembly and file paths
+    refAssembly             = params.ref_ver == 'hg19' ? 'grch37' : 'grch38'
+    chrmap                  = "${params.ref_dir}/bcf_annotate/chrmap.txt"
+    ref_loc                 = "${params.ref_dir}/phrank/${params.ref_ver}/${refAssembly}_symbol_to_location.txt"
+    ref_to_sym              = "${params.ref_dir}/phrank/${params.ref_ver}/${params.ref_ver}/ensembl_to_symbol.txt"
+    ref_sorted_sym          = "${params.ref_dir}/phrank/${params.ref_ver}/gene_to_symbol_sorted.txt"
 
-    )
-    def vepCache      = "${params.ref_dir}/vep/${params.ref_ver}/"
-    def vepPlugins    = "${vepCache}Plugins/"
-    def dbnsfpName    = params.ref_ver == 'hg19' ? 'dbNSFP4.3a_grch37.gz' : 'dbNSFP4.1a_grch38.gz'
-    def gnomadName    = params.ref_ver == 'hg19' ? 'gnomad.genomes.r2.1.sites.grch37_noVEP.vcf.gz' : 'gnomad.genomes.GRCh38.v3.1.2.sites.vcf.gz'
-    def caddName      = params.ref_ver == 'hg19' ? 'hg19_whole_genome_SNVs.tsv.gz' : 'hg38_whole_genome_SNV.tsv.gz'
+    // Filter BED settings
+    ref_exonic_filter_bed   = "${params.ref_dir}/filter_exonic/${params.ref_ver}.bed"
+    ref_filter_bed          = params.bed_filter ? params.bed_filter : (params.exome_filter ? ref_exonic_filter_bed : '/dev/null')
+
+    // Phrank files
+    phrank_dagfile          = "${params.ref_dir}/phrank/${params.ref_ver}/child_to_parent.txt"
+    phrank_disease_annotation = "${params.ref_dir}/phrank/${params.ref_ver}/disease_to_pheno.txt"
+    phrank_gene_annotation  = "${params.ref_dir}/phrank/${params.ref_ver}/gene_to_phenotype.txt"
+    phrank_disease_gene     = "${params.ref_dir}/phrank/${params.ref_ver}/disease_to_gene.txt"
+
+    // OMIM/HPO annotation
+    omim_hgmd_phen          = "${params.ref_dir}/omim_annotate/${params.ref_ver}/HGMD_phen.tsv"
+    omim_obo                = "${params.ref_dir}/omim_annotate/hp.obo"
+    omim_genemap2           = "${params.ref_dir}/omim_annotate/${params.ref_ver}/genemap2_v2022.rds"
+    omim_pheno              = "${params.ref_dir}/omim_annotate/${params.ref_ver}/HPO_OMIM.tsv"
+
+    // GNOMAD VCF paths
+    ref_gnomad_genome       = "${params.ref_dir}/filter_vep/${params.ref_ver}/gnomad.${params.ref_ver}.blacklist.genomes.vcf.gz"
+    ref_gnomad_genome_idx   = "${ref_gnomad_genome}.tbi"
+    ref_gnomad_exome        = "${params.ref_dir}/filter_vep/${params.ref_ver}/gnomad.${params.ref_ver}.blacklist.exomes.vcf.gz"
+    ref_gnomad_exome_idx    = "${ref_gnomad_exome}.tbi"
+
+    // VEP plugin file names
+    vep_dbnsfp_name         = params.ref_ver == 'hg19' ? 'dbNSFP4.3a_grch37.gz' : 'dbNSFP4.1a_grch38.gz'
+    vep_gnomad_name         = params.ref_ver == 'hg19' ? 'gnomad.genomes.r2.1.sites.grch37_noVEP.vcf.gz' : 'gnomad.genomes.GRCh38.v3.1.2.sites.vcf.gz'
+    vep_cadd_name           = params.ref_ver == 'hg19' ? 'hg19_whole_genome_SNVs.tsv.gz' : 'hg38_whole_genome_SNV.tsv.gz'
+
+    // VEP cache and plugin paths
+    vep_dir_cache           = "${params.ref_dir}/vep/${params.ref_ver}/"
+    vep_dir_plugins         = "${params.ref_dir}/vep/${params.ref_ver}/Plugins/"
+    vep_custom_gnomad       = "${vep_dir_cache}${vep_gnomad_name}"
+    vep_custom_clinvar      = "${vep_dir_cache}clinvar_20220730.vcf.gz"
+    vep_custom_hgmd         = "${vep_dir_cache}HGMD_Pro_2022.2_${params.ref_ver}.vcf.gz"
+    vep_plugin_revel        = "${vep_dir_plugins}new_tabbed_revel_${refAssembly}.tsv.gz"
+    vep_plugin_spliceai_snv = "${vep_dir_plugins}spliceai_scores.masked.snv.${params.ref_ver}.vcf.gz"
+    vep_plugin_spliceai_indel = "${vep_dir_plugins}spliceai_scores.masked.indel.${params.ref_ver}.vcf.gz"
+    vep_plugin_cadd         = "${vep_dir_plugins}${vep_cadd_name}"
+    vep_plugin_dbnsfp       = "${vep_dir_plugins}${vep_dbnsfp_name}"
+    vep_idx                 = "${params.ref_dir}/vep/${params.ref_ver}/*.tbi"
+
+    // Pipeline directories
+    ref_annot_dir           = "${params.ref_dir}/annotate"
+    ref_var_tier_dir        = "${params.ref_dir}/var_tier"
+    ref_merge_expand_dir    = "${params.ref_dir}/merge_expand"
+    ref_mod5_diffusion_dir  = "${params.ref_dir}/mod5_diffusion"
+    ref_predict_new_dir     = "${params.ref_dir}/predict_new"
+    ref_model_inputs_dir    = "${params.ref_dir}/model_inputs"
+
+    workflow.onComplete {
+        println "[INFO] refAssembly: ${refAssembly}"
+        println "[INFO] chrmapPath: ${chrmap}"
+        println "[INFO] refLoc: ${ref_loc}"
+        println "[INFO] refToSym: ${ref_to_sym}"
+        println "[INFO] sortedSym: ${ref_sorted_sym}"
+        println "[INFO] exonicBed: ${ref_exonic_filter_bed}"
+        println "[INFO] filterBed: ${ref_filter_bed}"
+        println "[INFO] vepCache: ${vep_dir_cache}"
+        println "[INFO] vepPlugins: ${vep_dir_plugins}"
+        println "[INFO] dbnsfpName: ${vep_plugin_dbnsfp}"
+        println "[INFO] gnomadName: ${vep_custom_gnomad}"
+        println "[INFO] caddName: ${vep_plugin_cadd}"
+        println "[INFO] omimHgmdPhen: ${omim_hgmd_phen}"
+        println "[INFO] omimOBO: ${omim_obo}"
+        println "[INFO] omimGenemap2: ${omim_genemap2}"
+        println "[INFO] omimPheno: ${omim_pheno}"
+        println "[INFO] vepCustomClinvar: ${vep_custom_clinvar}"
+        println "[INFO] vepCustomHgmd: ${vep_custom_hgmd}"
+        println "[INFO] vepPluginRevel: ${vep_plugin_revel}"
+        println "[INFO] vepPluginSpliceaiSNV: ${vep_plugin_spliceai_snv}"
+        println "[INFO] vepPluginSpliceaiIndel: ${vep_plugin_spliceai_indel}"
+        println "[INFO] vepIdx: ${vep_idx}"
+    }
 
     showUsage()
     showVersion()
@@ -151,30 +215,30 @@ workflow {
     SPLIT_VCF_BY_CHROMOSOME(VCF_PRE_PROCESS.out.vcf)
     ANNOTATE_BY_VEP(
         SPLIT_VCF_BY_CHROMOSOME.out.chr_vcfs.flatten(),
-        params.vep_dir_cache,
-        params.vep_dir_plugins,
-        params.vep_custom_gnomad,
-        params.vep_custom_clinvar,
-        params.vep_custom_hgmd,
-        params.vep_plugin_revel,
-        params.vep_plugin_spliceai_snv,
-        params.vep_plugin_spliceai_indel,
-        params.vep_plugin_cadd,
-        params.vep_plugin_dbnsfp,
-        file(params.vep_idx)
+        vep_dir_cache,
+        vep_dir_plugins,
+        vep_custom_gnomad,
+        vep_custom_clinvar,
+        vep_custom_hgmd,
+        vep_plugin_revel,
+        vep_plugin_spliceai_snv,
+        vep_plugin_spliceai_indel,
+        vep_plugin_cadd,
+        vep_plugin_dbnsfp,
+        file(vep_idx)
     )
     HPO_SIM(
         params.input_hpo,
-        params.omim_hgmd_phen,
-        params.omim_obo,
-        params.omim_genemap2,
-        params.omim_pheno
+        omim_hgmd_phen,
+        omim_obo,
+        omim_genemap2,
+        omim_pheno
     )
     ANNOTATE_BY_MODULES(
         ANNOTATE_BY_VEP.out.vep_output,
         HPO_SIM.out.hgmd_sim,
         HPO_SIM.out.omim_sim,
-        file(params.ref_annot_dir),
+        file(ref_annot_dir),
     )
     PHRANK_SCORING(
         NORMALIZE_VCF.out.vcf
@@ -182,23 +246,23 @@ workflow {
     JOIN_TIER_PHRANK(
         ANNOTATE_BY_MODULES.out.scores,
         PHRANK_SCORING.out,
-        file(params.ref_annot_dir),
-        file(params.ref_var_tier_dir),
-        file(params.ref_merge_expand_dir),
+        file(ref_annot_dir),
+        file(ref_var_tier_dir),
+        file(ref_merge_expand_dir),
     )
     MERGE_SCORES_BY_CHROMOSOME(
         PHRANK_SCORING.out,
         JOIN_TIER_PHRANK.out.tier.collect(),
         JOIN_TIER_PHRANK.out.compressed_scores.collect(),
-        file(params.ref_annot_dir),
-        file(params.ref_mod5_diffusion_dir),
-        file(params.ref_merge_expand_dir),
+        file(ref_annot_dir),
+        file(ref_mod5_diffusion_dir),
+        file(ref_merge_expand_dir),
     )
     // Run Prediction on the final merged output
     PREDICTION(
         MERGE_SCORES_BY_CHROMOSOME.out.merged_matrix,
         MERGE_SCORES_BY_CHROMOSOME.out.merged_compressed_scores,
-        file(params.ref_predict_new_dir),
-        file(params.ref_model_inputs_dir),
+        file(ref_predict_new_dir),
+        file(ref_model_inputs_dir),
     )
 }
